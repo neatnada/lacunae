@@ -1,6 +1,6 @@
 <div class="vf-tester">
-  <div class="vf-specimen" contenteditable="true" spellcheck="false" data-placeholder="Typable Area">The quick brown fox jumps over the lazy dog</div>
-  <div class="vf-controls"></div>
+  <div class="vf-specimen" contenteditable="true" spellcheck="false" data-placeholder="Typable Area" data-maxlength="45">The quick brown fox jumps over the lazy dog</div>
+  <div class="controls-wrapper"><div class="vf-controls"></div></div>
 </div>
 
 <script>
@@ -20,6 +20,9 @@
     /* ⚑ paste your hosted .woff2 URL here */
     var FONT_URL = "https://freight.cargo.site/m/H3013594974459155713127740277357/LacunaeTest4VF.woff2";
     var FONT_NAME = "Lacunae Test 4 Presence";
+
+    /* ⚑ max characters allowed in the typable specimen area */
+    var MAX_CHARS = 45;
 
     var AXES = [
       { tag: "EXSS", min: 0, max: 100, step: 1, default: 0, low: "Absence", high: "Excess" },
@@ -93,6 +96,40 @@
       }).join(", ");
       specimen.style.fontVariationSettings = settings;
     }
+
+    /* ---------- enforce character limit on the typable area ---------- */
+    function placeCaretAtEnd(el) {
+      var range = document.createRange();
+      var sel = window.getSelection();
+      range.selectNodeContents(el);
+      range.collapse(false);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+
+    specimen.addEventListener("input", function () {
+      if (specimen.textContent.length > MAX_CHARS) {
+        specimen.textContent = specimen.textContent.slice(0, MAX_CHARS);
+        placeCaretAtEnd(specimen);
+      }
+    });
+
+    // also catch paste events, which can jump well past the limit in one go
+    specimen.addEventListener("paste", function (e) {
+      e.preventDefault();
+      var text = (e.clipboardData || window.clipboardData).getData("text");
+      var current = specimen.textContent;
+      var sel = window.getSelection();
+      var allowed = MAX_CHARS - current.length;
+      if (allowed <= 0) return;
+      var insert = text.slice(0, allowed);
+      if (sel.rangeCount) {
+        var range = sel.getRangeAt(0);
+        range.deleteContents();
+        range.insertNode(document.createTextNode(insert));
+        placeCaretAtEnd(specimen);
+      }
+    });
 
     AXES.forEach(function (axis) {
       values[axis.tag] = axis.default;

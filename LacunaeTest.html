@@ -1,0 +1,120 @@
+<div class="vf-tester">
+  <div class="vf-specimen" contenteditable="true" spellcheck="false" data-placeholder="Typable Area">The quick brown fox jumps over the lazy dog</div>
+  <div class="vf-controls"></div>
+</div>
+
+<script>
+  (function () {
+    /* find this instance's own elements — works even if this block
+       is duplicated elsewhere on the page, unlike getElementById */
+    var thisScript = document.currentScript;
+    var root = thisScript.previousElementSibling;
+    if (!root || !root.classList.contains("vf-tester")) return;
+
+    /* bail out if this exact instance was already initialized —
+       Cargo can re-run inline scripts on client-side page navigation
+       without a full reload, which would otherwise duplicate the sliders */
+    if (root.dataset.vfInit) return;
+    root.dataset.vfInit = "true";
+
+    /* ⚑ paste your hosted .woff2 URL here */
+    var FONT_URL = "https://freight.cargo.site/m/H3013594974459155713127740277357/LacunaeTest4VF.woff2";
+    var FONT_NAME = "Lacunae Test 4 Presence";
+
+    var AXES = [
+      { tag: "EXSS", min: 0, max: 100, step: 1, default: 0, low: "Absence", high: "Excess" },
+      { tag: "ABSN", min: 0, max: 100, step: 1, default: 0, low: "Conceal", high: "Reveal" }
+    ];
+
+    /* ---------- inject styles (only once, even if duplicated) ---------- */
+    if (!window.__vfTesterStyled) {
+      window.__vfTesterStyled = true;
+      var css = ""
+        + ".vf-tester{--ink:#111110;--line:#111110;color:var(--ink);"
+        + "font-family:'" + FONT_NAME + "',serif;padding:7vw 8vw 6vw;"
+        + "box-sizing:border-box;-webkit-font-smoothing:antialiased;}"
+        + ".vf-tester *{box-sizing:border-box;}"
+        + ".vf-tester .vf-specimen{font-size:clamp(44px,9vw,132px);line-height:1.05;"
+        + "text-align:center;letter-spacing:0;margin:0 0 16vw;outline:none;"
+        + "min-height:1.1em;text-transform:uppercase;}"
+        + ".vf-tester .vf-specimen:empty::before{content:attr(data-placeholder);opacity:1;}"
+        + ".vf-tester .vf-controls{display:grid;grid-template-columns:repeat(2,minmax(220px,1fr));"
+        + "gap:10vw;max-width:900px;margin:0 auto;}"
+        + ".vf-tester .vf-axis{position:relative;}"
+        + ".vf-tester .vf-slider-wrap{position:relative;display:flex;align-items:center;}"
+        + ".vf-tester input[type=range]{-webkit-appearance:none;appearance:none;width:100%;"
+        + "height:20px;background:transparent;margin:0;cursor:ew-resize;}"
+        + ".vf-tester input[type=range]::-webkit-slider-runnable-track{height:1px;background:var(--line);}"
+        + ".vf-tester input[type=range]::-moz-range-track{height:1px;background:var(--line);}"
+        + ".vf-tester input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:1px;"
+        + "height:14px;border-radius:0;background:var(--ink);margin-top:-7px;}"
+        + ".vf-tester input[type=range]::-moz-range-thumb{width:1px;height:14px;border-radius:0;"
+        + "border:none;background:var(--ink);}"
+        + ".vf-tester .vf-minmax{display:flex;justify-content:space-between;font-size:12px;"
+        + "letter-spacing:0.06em;text-transform:uppercase;font-variant-caps:small-caps;margin-top:4px;}"
+        + "@media (prefers-reduced-motion:reduce){.vf-tester *{transition:none !important;}}";
+
+      var styleEl = document.createElement("style");
+      styleEl.textContent = css;
+      document.head.appendChild(styleEl);
+    }
+
+    /* ---------- load the variable font (only once, even if duplicated) ---------- */
+    if (!window.__vfTesterFontLoaded) {
+      window.__vfTesterFontLoaded = true;
+      if ("FontFace" in window) {
+        var face = new FontFace(FONT_NAME, "url(" + FONT_URL + ")", {
+          weight: "1 999",
+          style: "normal"
+        });
+        face.load().then(function (loaded) {
+          document.fonts.add(loaded);
+        }).catch(function (err) {
+          console.error("Variable font failed to load:", err);
+        });
+      } else {
+        // fallback for older browsers: plain @font-face via injected style
+        var fallbackStyle = document.createElement("style");
+        fallbackStyle.textContent = "@font-face{font-family:'" + FONT_NAME + "';"
+          + "src:url('" + FONT_URL + "') format('woff2-variations'),"
+          + "url('" + FONT_URL + "') format('woff2');font-weight:1 999;}";
+        document.head.appendChild(fallbackStyle);
+      }
+    }
+
+    /* ---------- build sliders (scoped to this instance only) ---------- */
+    var specimen = root.querySelector(".vf-specimen");
+    var controls = root.querySelector(".vf-controls");
+    var values = {};
+
+    function applyVariation() {
+      var settings = AXES.map(function (a) {
+        return '"' + a.tag + '" ' + values[a.tag];
+      }).join(", ");
+      specimen.style.fontVariationSettings = settings;
+    }
+
+    AXES.forEach(function (axis) {
+      values[axis.tag] = axis.default;
+
+      var wrap = document.createElement("div");
+      wrap.className = "vf-axis";
+      wrap.innerHTML =
+        '<div class="vf-slider-wrap">' +
+          '<input type="range" min="' + axis.min + '" max="' + axis.max +
+            '" step="' + axis.step + '" value="' + axis.default + '" data-tag="' + axis.tag + '">' +
+        '</div>' +
+        '<div class="vf-minmax"><span>' + axis.low + '</span><span>' + axis.high + '</span></div>';
+
+      var input = wrap.querySelector("input");
+      input.addEventListener("input", function () {
+        values[axis.tag] = this.value;
+        applyVariation();
+      });
+
+      controls.appendChild(wrap);
+    });
+
+    applyVariation();
+  })();
+</script>

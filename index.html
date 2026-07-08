@@ -1,5 +1,5 @@
-<div class="vf-tester">
-  <div class="vf-specimen" contenteditable="true" spellcheck="false" data-placeholder="Typable Area" data-maxlength="45">The quick brown fox jumps over the lazy dog</div>
+<!DOCTYPE html><html><head><meta charset="utf-8"><title>Standalone Test</title></head><body><div class="vf-tester">
+  <div class="vf-specimen" contenteditable="true" spellcheck="false" data-placeholder="Typable Area" data-maxlength="86">It is these absences of sense or lacunae of speech which become more potent than words</div>
   <div class="controls-wrapper"><div class="vf-controls"></div></div>
 </div>
 
@@ -22,11 +22,11 @@
     var FONT_NAME = "Lacunae Test 4 Presence";
 
     /* ⚑ max characters allowed in the typable specimen area */
-    var MAX_CHARS = 45;
+    var MAX_CHARS = 86;
 
     var AXES = [
-      { tag: "EXSS", min: 0, max: 100, step: 1, default: 0, low: "Excess", high: "0" },
-      { tag: "ABSN", min: 0, max: 100, step: 1, default: 0, low: "Absence", high: "0" }
+      { tag: "EXSS", min: 0, max: 100, step: 1, default: 0, low: "Absence", high: "Excess" },
+      { tag: "ABSN", min: 0, max: 100, step: 1, default: 0, low: "Reveal", high: "Conceal" }
     ];
 
     /* ---------- inject styles (only once, even if duplicated) ---------- */
@@ -39,7 +39,7 @@
         + "display:flex;flex-direction:column;height:100vh;overflow:hidden;}"
         + ".vf-tester *{box-sizing:border-box;}"
         + ".vf-tester .vf-specimen{flex:1 1 auto;display:flex;align-items:center;"
-        + "justify-content:center;overflow:hidden;font-size:clamp(44px,9vw,132px);"
+        + "justify-content:center;overflow:hidden;font-size:132px;"
         + "line-height:1.05;text-align:center;letter-spacing:0;margin:0;outline:none;"
         + "text-transform:uppercase;word-break:break-word;}"
         + ".vf-tester .vf-specimen:empty::before{content:attr(data-placeholder);opacity:1;}"
@@ -110,12 +110,39 @@
       sel.addRange(range);
     }
 
+    /* ---------- shrink specimen text to fit its fixed-height box ---------- */
+    var MAX_FONT_PX = 132;
+    var MIN_FONT_PX = 18;
+    var VW_CAP = 0.09; // matches the old clamp()'s 9vw upper bound
+
+    function fitText() {
+      var cap = Math.min(MAX_FONT_PX, window.innerWidth * VW_CAP);
+      var size = cap;
+      specimen.style.fontSize = size + "px";
+
+      // shrink in steps until it fits both dimensions of its own box
+      var guard = 0;
+      while (
+        guard < 60 &&
+        size > MIN_FONT_PX &&
+        (specimen.scrollHeight > specimen.clientHeight ||
+          specimen.scrollWidth > specimen.clientWidth)
+      ) {
+        size -= 2;
+        specimen.style.fontSize = size + "px";
+        guard++;
+      }
+    }
+
+    window.addEventListener("resize", fitText);
+
     specimen.addEventListener("input", function () {
       stopAutoplay();
       if (specimen.textContent.length > MAX_CHARS) {
         specimen.textContent = specimen.textContent.slice(0, MAX_CHARS);
         placeCaretAtEnd(specimen);
       }
+      fitText();
     });
 
     // also catch paste events, which can jump well past the limit in one go
@@ -133,6 +160,7 @@
         range.insertNode(document.createTextNode(insert));
         placeCaretAtEnd(specimen);
       }
+      fitText();
     });
 
     var sliderEls = {};
@@ -166,8 +194,7 @@
     });
 
     applyVariation();
-
-    /* ---------- autoplay: drifts both axes until a slider is touched ---------- */
+    fitText();
     var autoplayFrame = null;
     var autoplayActive = true;
     var autoplayStart = null;
@@ -204,3 +231,4 @@
     autoplayFrame = requestAnimationFrame(stepAutoplay);
   })();
 </script>
+</body></html>
